@@ -1,104 +1,152 @@
 "use client";
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface FormData {
   requesterName: string;
-  title: string;
-  description: string;
   location: string;
   issueType: string;
   additionalNotes: string;
-  date: string;
+  device: string;
 }
-const Index = () => {
-  const [formData, setFormData] = useState<FormData>({
-    requesterName: "",
-    title: "",
-    description: "",
-    location: "",
-    issueType: "",
-    additionalNotes: "",
-    date: new Date().toISOString().split("T")[0],
-  });
+
+interface ComplaintData {
+  name: string;
+  reporter_name: string;
+  floor: number;
+  device_type: string;
+  complaint_type: string;
+  notes: string;
+}
+
+// ─── Static Data ──────────────────────────────────────────────────────────────
+
+const locations = [
+  { value: "0", label: "القبو" },
+  { value: "1", label: "الطابق الأرضي" },
+  { value: "2", label: "الطابق الثاني" },
+  { value: "13", label: "قسم ال IT" },
+  { value: "16", label: "معالجة فيزيائية" },
+  { value: "17", label: "تشريح مرضي" },
+  { value: "3", label: "قسم التدريب" },
+  { value: "4", label: "الطابق الرابع" },
+  { value: "5", label: "الطابق الخامس" },
+  { value: "6", label: "الطابق السادس" },
+  { value: "7", label: "الطابق السابع" },
+  { value: "8", label: "الطابق الثامن" },
+  { value: "9", label: "الطابق التاسع" },
+  { value: "10", label: "الطابق العاشر" },
+  { value: "11", label: "العيادات" },
+  { value: "12", label: "الاسعاف" },
+  { value: "18", label: "قسم الكلية" },
+];
+
+const devices = [
+  {
+    value: "phone",
+    label: "الهاتف",
+    options: [
+      { value: "full", label: "توقف كامل" },
+      { value: "no_connection", label: "لا يوجد إتصال" },
+      { value: "no_answer", label: "لا يوجد إستقبال" },
+      { value: "other", label: "أخرى" },
+    ],
+  },
+  {
+    value: "internet",
+    label: "انترنت",
+    options: [
+      { value: "full", label: "توقف كامل" },
+      { value: "coverage", label: "ضعف تغطية" },
+      { value: "outage", label: "بُطأ انترنت" },
+      { value: "other", label: "مشاكل أخرى" },
+    ],
+  },
+  {
+    value: "nursing",
+    label: "التمريض",
+    options: [
+      { value: "full", label: "توقف كامل" },
+      { value: "call_button", label: "مشكلة في زر الاستدعاء" },
+      { value: "room_control", label: "مشكلة في تحكم الغرفة" },
+      { value: "reception_control", label: "مشكلة في تحكم الاستقبال" },
+    ],
+  },
+  {
+    value: "laptop",
+    label: "لابتوب",
+    options: [
+      { value: "full", label: "توقف كامل" },
+      { value: "pause", label: "تعليق" },
+      { value: "software", label: "مشكلة برنامج" },
+      { value: "other", label: "مشاكل أخرى" },
+    ],
+  },
+  {
+    value: "printer",
+    label: "طابعة",
+    options: [
+      { value: "full", label: "توقف كامل" },
+      { value: "no_connection", label: "لا يوجد إتصال" },
+      { value: "other", label: "أخرى" },
+    ],
+  },
+  {
+    value: "other",
+    label: "غير ذلك",
+    options: [
+      { value: "full", label: "توقف كامل" },
+      { value: "other", label: "أخرى" },
+    ],
+  },
+];
+
+const EMPTY_FORM: FormData = {
+  requesterName: "",
+  location: "",
+  issueType: "",
+  device: "",
+  additionalNotes: "",
+};
+
+// ─── Input / Select shared styles ────────────────────────────────────────────
+
+const fieldBase =
+  "w-full px-4 py-3 rounded-xl border text-right bg-slate-50 focus:outline-none focus:ring-2 transition-all duration-150 text-slate-800 placeholder:text-slate-400";
+const fieldNormal =
+  "border-slate-200 focus:ring-teal-400 focus:border-teal-700";
+const fieldError = "border-red-300 focus:ring-red-100 focus:border-red-400";
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+const ComplaintForm: React.FC = () => {
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<FormData>>({});
-  const url = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("http://192.168.1.18:3001/api/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit form");
-      }
-
-      setIsSubmitted(true);
-      setFormData({
-        requesterName: "",
-        title: "",
-        description: "",
-        location: "",
-        issueType: "",
-        additionalNotes: "",
-        date: new Date().toISOString().split("T")[0],
-      });
-    } catch (error) {
-      console.error("Error:", error);
-      setErrors({ ...errors, description: "فشل في إرسال النموذج." });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Partial<FormData>>({});
 
-  const issueTypes = [
-    { value: "", label: "اختر نوع المشكلة" },
-    { value: "internet", label: "ضعف انترنت" },
-    { value: "phone", label: "فصل هاتف" },
-    { value: "printer", label: "مشاكل في الطابعة" },
-    { value: "software", label: "البرنامج" },
-    { value: "other", label: "غير ذلك" },
-  ];
+  const selectedDevice = devices.find((d) => d.value === formData.device);
+
+  const generateName = (): string => {
+    const deviceLabel = selectedDevice?.label ?? "";
+    const issueLabel =
+      selectedDevice?.options.find((o) => o.value === formData.issueType)
+        ?.label ?? "";
+    const locationLabel =
+      locations.find((l) => l.value === formData.location)?.label ?? "";
+    return `${deviceLabel} - ${issueLabel} (${locationLabel})`;
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {};
-
-    if (!formData.requesterName.trim()) {
+    if (!formData.requesterName.trim())
       newErrors.requesterName = "هذا الحقل مطلوب";
-    }
-
-    if (!formData.title.trim()) {
-      newErrors.title = "هذا الحقل مطلوب";
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "هذا الحقل مطلوب";
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = "هذا الحقل مطلوب";
-    }
-
-    if (!formData.issueType) {
+    if (!formData.location) newErrors.location = "هذا الحقل مطلوب";
+    if (!formData.device) newErrors.device = "هذا الحقل مطلوب";
+    if (formData.device && !formData.issueType)
       newErrors.issueType = "هذا الحقل مطلوب";
-    }
-
-    if (!formData.date) {
-      newErrors.date = "هذا الحقل مطلوب";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -109,262 +157,283 @@ const Index = () => {
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error when user starts typing
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === "device") updated.issueType = "";
+      return updated;
+    });
     if (errors[name as keyof FormData]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const resetForm = () => {
-    setIsSubmitted(false);
-    setErrors({});
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setIsSubmitting(true);
+    try {
+      const payload: ComplaintData = {
+        name: generateName(),
+        reporter_name: formData.requesterName,
+        floor: parseInt(formData.location) || 0,
+        device_type: formData.device,
+        complaint_type: formData.issueType,
+        notes: formData.additionalNotes,
+      };
+      const response = await fetch(`http://192.168.88.100:3666/complaints/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error("Failed to submit");
+      setIsSubmitted(true);
+      setFormData(EMPTY_FORM);
+    } catch {
+      setErrors((prev) => ({
+        ...prev,
+        additionalNotes: "فشل في إرسال النموذج. حاول مرة أخرى.",
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // ── Success screen ──────────────────────────────────────────────────────────
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50 py-8 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-slate-700 arabic-text mb-4">
-              تم إرسال الشكوى بنجاح
-            </h1>
-            <p className="text-slate-600 arabic-text mb-8">
-              شكراً لك على تقديم الشكوى. سيتم مراجعتها والرد عليك في أقرب وقت
-              ممكن.
-            </p>
-            <button
-              onClick={resetForm}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-8 rounded-xl transition-all duration-200 arabic-text"
+      <div
+        className="min-h-screen bg-[#f8f7f4] flex flex-col items-center justify-center px-4"
+        dir="rtl"
+      >
+        <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#0d9488"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              تقديم شكوى جديدة
-            </button>
+              <path d="M8 2v4" />
+              <path d="M16 2v4" />
+              <path d="M21 14V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+              <path d="M3 10h18" />
+              <path d="m16 20 2 2 4-4" />
+            </svg>
           </div>
-
-          {/* Footer */}
-          <div className="text-center mt-12 pt-8 border-t border-slate-200">
-            <p className="text-slate-500 arabic-text text-sm">
-              © 2025 - قسم تقنية المعلومات
-            </p>
-          </div>
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">
+            تم إرسال الشكوى بنجاح
+          </h2>
+          <p className="text-slate-500 text-sm mb-7 leading-relaxed">
+            شكراً لك. سيتم مراجعة شكواك والرد عليك في أقرب وقت ممكن.
+          </p>
+          <button
+            onClick={() => {
+              setIsSubmitted(false);
+              setErrors({});
+            }}
+            className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2.5 px-7 rounded-xl transition-colors duration-150"
+          >
+            تقديم شكوى جديدة
+          </button>
         </div>
+        <p className="text-slate-400 text-xs mt-8">
+          © {new Date().getFullYear()} قسم تقنية المعلومات
+        </p>
       </div>
     );
   }
 
+  // ── Form ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#f8f7f4] py-10 px-4" dir="rtl">
+      <div className="max-w-xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-600 mb-4 shadow-md">
             <svg
-              className="w-8 h-8 text-blue-600"
+              className="w-7 h-7 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              strokeWidth="2"
+              strokeWidth="1.8"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 12h3l2-4 4 8 2-4h3"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-slate-700 arabic-text mb-2">
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight mb-1">
             نظام الشكاوى والاقتراحات
           </h1>
-          <p className="text-slate-600 arabic-text">
-            قسم تقنية المعلومات - مستشفى البر
+          <p className="text-slate-500 text-sm">
+            قسم تقنية المعلومات — مستشفى البر
           </p>
         </div>
-
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-2xl shadow-xl p-8 space-y-6"
-        >
+        <div className="fixed top-4 left-4 z-50">
+          <Link
+            to="/analytics"
+            className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            لوحة التحكم
+          </Link>
+        </div>
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-5">
           {/* Requester Name */}
           <div>
-            <label htmlFor="requesterName" className="form-label">
-              اسم مقدم الشكوى أو الاقتراح{" "}
-              <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              اسم مقدم الشكوى <span className="text-teal-600">*</span>
             </label>
             <input
               type="text"
-              id="requesterName"
               name="requesterName"
               value={formData.requesterName}
               onChange={handleInputChange}
-              className={`form-input ${errors.requesterName ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""}`}
+              className={`${fieldBase} ${errors.requesterName ? fieldError : fieldNormal}`}
               placeholder="أدخل اسمك الكامل"
             />
             {errors.requesterName && (
-              <p className="text-red-500 text-sm mt-1 arabic-text">
+              <p className="text-red-500 text-xs mt-1.5">
                 {errors.requesterName}
-              </p>
-            )}
-          </div>
-
-          {/* Title */}
-          <div>
-            <label htmlFor="title" className="form-label">
-              العنوان <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              className={`form-input ${errors.title ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""}`}
-              placeholder="عنوان مختصر للمشكلة أو الاقتراح"
-            />
-            {errors.title && (
-              <p className="text-red-500 text-sm mt-1 arabic-text">
-                {errors.title}
-              </p>
-            )}
-          </div>
-
-          {/* Issue Type */}
-          <div>
-            <label htmlFor="issueType" className="form-label">
-              النوع <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="issueType"
-              name="issueType"
-              value={formData.issueType}
-              onChange={handleInputChange}
-              className={`form-select ${errors.issueType ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""}`}
-            >
-              {issueTypes.map((type) => (
-                <option
-                  key={type.value}
-                  value={type.value}
-                  className="arabic-text"
-                >
-                  {type.label}
-                </option>
-              ))}
-            </select>
-            {errors.issueType && (
-              <p className="text-red-500 text-sm mt-1 arabic-text">
-                {errors.issueType}
               </p>
             )}
           </div>
 
           {/* Location */}
           <div>
-            <label htmlFor="location" className="form-label">
-              المكان <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              الموقع <span className="text-teal-600">*</span>
             </label>
-            <input
-              type="text"
-              id="location"
+            <select
               name="location"
               value={formData.location}
               onChange={handleInputChange}
-              className={`form-input ${errors.location ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""}`}
-              placeholder="القسم أو المكان المحدد"
-            />
+              className={`${fieldBase} ${errors.location ? fieldError : fieldNormal}`}
+            >
+              <option value="">اختر الموقع</option>
+              {locations.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
             {errors.location && (
-              <p className="text-red-500 text-sm mt-1 arabic-text">
-                {errors.location}
-              </p>
+              <p className="text-red-500 text-xs mt-1.5">{errors.location}</p>
             )}
           </div>
 
-          {/* Description */}
+          {/* Device */}
           <div>
-            <label htmlFor="description" className="form-label">
-              الوصف <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              الجهاز <span className="text-teal-600">*</span>
             </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
+            <select
+              name="device"
+              value={formData.device}
               onChange={handleInputChange}
-              rows={5}
-              className={`form-input resize-none ${errors.description ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""}`}
-              placeholder="وصف تفصيلي للمشكلة أو الاقتراح..."
-            />
-            {errors.description && (
-              <p className="text-red-500 text-sm mt-1 arabic-text">
-                {errors.description}
-              </p>
+              className={`${fieldBase} ${errors.device ? fieldError : fieldNormal}`}
+            >
+              <option value="">اختر الجهاز</option>
+              {devices.map((d) => (
+                <option key={d.value} value={d.value}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+            {errors.device && (
+              <p className="text-red-500 text-xs mt-1.5">{errors.device}</p>
             )}
           </div>
 
-          {/* Additional Notes */}
+          {/* Issue Type */}
+          {formData.device && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                نوع المشكلة <span className="text-teal-600">*</span>
+              </label>
+              <select
+                name="issueType"
+                value={formData.issueType}
+                onChange={handleInputChange}
+                className={`${fieldBase} ${errors.issueType ? fieldError : fieldNormal}`}
+              >
+                <option value="">اختر المشكلة</option>
+                {selectedDevice?.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              {errors.issueType && (
+                <p className="text-red-500 text-xs mt-1.5">
+                  {errors.issueType}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Notes */}
           <div>
-            <label htmlFor="additionalNotes" className="form-label">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
               ملاحظات إضافية
             </label>
-            <input
-              type="text"
-              id="additionalNotes"
+            <textarea
               name="additionalNotes"
               value={formData.additionalNotes}
               onChange={handleInputChange}
-              className="form-input"
-              placeholder="أي معلومات إضافية (اختياري)"
+              rows={4}
+              className={`${fieldBase} resize-none ${errors.additionalNotes ? fieldError : fieldNormal}`}
+              placeholder="أي معلومات إضافية تساعد الفريق على الفهم..."
             />
-          </div>
-
-          {/* Date */}
-          <div>
-            <label htmlFor="date" className="form-label">
-              التاريخ <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              id="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              className={`form-input ${errors.date ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""}`}
-            />
-            {errors.date && (
-              <p className="text-red-500 text-sm mt-1 arabic-text">
-                {errors.date}
+            {errors.additionalNotes && (
+              <p className="text-red-500 text-xs mt-1.5">
+                {errors.additionalNotes}
               </p>
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Divider */}
+          <div className="border-t border-slate-100 pt-1" />
+
+          {/* Submit */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`submit-button ${isSubmitting ? "opacity-75 cursor-not-allowed" : ""}`}
+            onClick={() => {
+              const fakeEvent = {
+                preventDefault: () => {},
+              } as React.FormEvent<HTMLFormElement>;
+              handleSubmit(fakeEvent);
+            }}
+            className={`w-full py-3 rounded-xl font-medium text-sm text-white tracking-wide transition-all duration-150 ${
+              isSubmitting
+                ? "bg-teal-500 cursor-not-allowed"
+                : "bg-teal-600 hover:bg-teal-700 active:scale-[0.99] shadow-sm"
+            }`}
           >
             {isSubmitting ? (
-              <div className="flex items-center justify-center gap-3">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                   <circle
                     className="opacity-25"
                     cx="12"
@@ -381,22 +450,19 @@ const Index = () => {
                   />
                 </svg>
                 جاري الإرسال...
-              </div>
+              </span>
             ) : (
-              "إرسال"
+              "إرسال الشكوى"
             )}
           </button>
-        </form>
-
-        {/* Footer */}
-        <div className="text-center mt-12 pt-8 border-t border-slate-200">
-          <p className="text-slate-500 arabic-text text-sm">
-            © 2025 - قسم تقنية المعلومات
-          </p>
         </div>
+
+        <p className="text-center text-slate-400 text-xs mt-6">
+          © {new Date().getFullYear()} قسم تقنية المعلومات
+        </p>
       </div>
     </div>
   );
 };
 
-export default Index;
+export default ComplaintForm;
