@@ -180,7 +180,7 @@ const ComplaintForm: React.FC = () => {
         complaint_type: formData.issueType,
         notes: formData.additionalNotes,
       };
-      const response = await fetch(`http://192.168.88.100:3666/complaints/`, {
+      const response = await fetch(`/api/complaints/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

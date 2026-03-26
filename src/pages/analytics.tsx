@@ -248,7 +248,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://192.168.88.100:3666/complaints/`);
+      const res = await fetch(`/api/complaints/`);
       if (!res.ok) throw new Error("فشل في تحميل البيانات");
       const data: Complaint[] = await res.json();
       setComplaints(data);
