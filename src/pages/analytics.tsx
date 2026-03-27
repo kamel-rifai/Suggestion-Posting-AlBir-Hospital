@@ -148,7 +148,7 @@ const LoginGate: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const [shake, setShake] = useState(false);
 
   const attempt = () => {
-    if (password === "123") {
+    if (password === import.meta.env.VITE_ANALYTICS_PASSWORD) {
       onSuccess();
     } else {
       setError(true);
