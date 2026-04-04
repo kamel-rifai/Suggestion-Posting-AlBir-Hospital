@@ -148,7 +148,9 @@ const LoginGate: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const [shake, setShake] = useState(false);
 
   const attempt = () => {
-    if (password === import.meta.env.VITE_ANALYTICS_PASSWORD) {
+    const envPassword = import.meta.env.VITE_ANALYTICS_PASSWORD;
+
+    if (password === envPassword) {
       onSuccess();
     } else {
       setError(true);
@@ -248,7 +250,11 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/complaints/`);
+      const res = await fetch(`/api/complaints/`, {
+        headers: {
+          "x-api-key": import.meta.env.VITE_API_KEY,
+        },
+      });
       if (!res.ok) throw new Error("فشل في تحميل البيانات");
       const data: Complaint[] = await res.json();
       setComplaints(data);
